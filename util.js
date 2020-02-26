@@ -109,3 +109,5 @@ util.clamp = function(value, low, high) {
     return high;
   return value;
 };
+
+export {util}

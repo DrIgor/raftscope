@@ -1,3 +1,5 @@
+import {util} from "./util.js";
+
 /* jshint globalstrict: true */
 /* jshint browser: true */
 /* jshint devel: true */
@@ -9,8 +11,8 @@ var raft = {};
 var RPC_TIMEOUT = 50000;
 var MIN_RPC_LATENCY = 10000;
 var MAX_RPC_LATENCY = 15000;
-var ELECTION_TIMEOUT = 100000;
-var NUM_SERVERS = 5;
+export var ELECTION_TIMEOUT = 100000;
+export var NUM_SERVERS = 5;
 var BATCH_SIZE = 1;
 
 (function() {
@@ -392,3 +394,5 @@ raft.setupLogReplicationScenario = function(model) {
 };
 
 })();
+
+export {raft}

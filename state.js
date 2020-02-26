@@ -1,3 +1,5 @@
+import {util} from "./util.js";
+
 /* jshint globalstrict: true */
 /* jshint browser: true */
 /* jshint devel: true */
@@ -96,3 +98,5 @@ var makeState = function(initial) {
   self.current.time = 0;
   return self;
 };
+
+export {makeState}
