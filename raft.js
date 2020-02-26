@@ -7,15 +7,12 @@ import {util} from "./util.js";
 /* global util */
 'use strict';
 
-var raft = {};
 var RPC_TIMEOUT = 50000;
 var MIN_RPC_LATENCY = 10000;
 var MAX_RPC_LATENCY = 15000;
 export var ELECTION_TIMEOUT = 100000;
 export var NUM_SERVERS = 5;
 var BATCH_SIZE = 1;
-
-(function() {
 
 var sendMessage = function(model, message) {
   message.sendTime = model.time;
@@ -47,13 +44,12 @@ var logTerm = function(log, index) {
 };
 
 var rules = {};
-raft.rules = rules;
 
 var makeElectionAlarm = function(now) {
   return now + (Math.random() + 1) * ELECTION_TIMEOUT;
 };
 
-raft.server = function(id, peers) {
+export function server(id, peers) {
   return {
     id: id,
     peers: peers,
@@ -69,7 +65,7 @@ raft.server = function(id, peers) {
     rpcDue:       util.makeMap(peers, 0),
     heartbeatDue: util.makeMap(peers, 0),
   };
-};
+}
 
 var stepDown = function(model, server, term) {
   server.term = term;
@@ -251,7 +247,7 @@ var handleMessage = function(model, server, message) {
 };
 
 
-raft.update = function(model) {
+export function update(model) {
   model.servers.forEach(function(server) {
     rules.startNewElection(model, server);
     rules.becomeLeader(model, server);
@@ -277,49 +273,49 @@ raft.update = function(model) {
       }
     });
   });
-};
+}
 
-raft.stop = function(model, server) {
+export function stop(model, server) {
   server.state = 'stopped';
   server.electionAlarm = 0;
-};
+}
 
-raft.resume = function(model, server) {
+export function resume(model, server) {
   server.state = 'follower';
   server.electionAlarm = makeElectionAlarm(model.time);
-};
+}
 
-raft.resumeAll = function(model) {
+export function resumeAll(model) {
   model.servers.forEach(function(server) {
-    raft.resume(model, server);
+    resume(model, server);
   });
-};
+}
 
-raft.restart = function(model, server) {
-  raft.stop(model, server);
-  raft.resume(model, server);
-};
+export function restart(model, server) {
+  stop(model, server);
+  resume(model, server);
+}
 
-raft.drop = function(model, message) {
+export function drop(model, message) {
   model.messages = model.messages.filter(function(m) {
     return m !== message;
   });
-};
+}
 
-raft.timeout = function(model, server) {
+export function timeout(model, server) {
   server.state = 'follower';
   server.electionAlarm = 0;
   rules.startNewElection(model, server);
-};
+}
 
-raft.clientRequest = function(model, server) {
+export function clientRequest(model, server) {
   if (server.state == 'leader') {
     server.log.push({term: server.term,
                      value: 'v'});
   }
-};
+}
 
-raft.spreadTimers = function(model) {
+export function spreadTimers(model) {
   var timers = [];
   model.servers.forEach(function(server) {
     if (server.electionAlarm > model.time &&
@@ -347,10 +343,10 @@ raft.spreadTimers = function(model) {
       });
     }
   }
-};
+}
 
-raft.alignTimers = function(model) {
-  raft.spreadTimers(model);
+export function alignTimers(model) {
+  spreadTimers(model);
   var timers = [];
   model.servers.forEach(function(server) {
     if (server.electionAlarm > model.time &&
@@ -365,15 +361,15 @@ raft.alignTimers = function(model) {
       console.log('adjusted S' + server.id + ' timeout forward');
     }
   });
-};
+}
 
-raft.setupLogReplicationScenario = function(model) {
+export function setupLogReplicationScenario(model) {
   var s1 = model.servers[0];
-  raft.restart(model, model.servers[1]);
-  raft.restart(model, model.servers[2]);
-  raft.restart(model, model.servers[3]);
-  raft.restart(model, model.servers[4]);
-  raft.timeout(model, model.servers[0]);
+  restart(model, model.servers[1]);
+  restart(model, model.servers[2]);
+  restart(model, model.servers[3]);
+  restart(model, model.servers[4]);
+  timeout(model, model.servers[0]);
   rules.startNewElection(model, s1);
   model.servers[1].term = 2;
   model.servers[2].term = 2;
@@ -384,15 +380,11 @@ raft.setupLogReplicationScenario = function(model) {
   model.servers[3].votedFor = 1;
   model.servers[4].votedFor = 1;
   s1.voteGranted = util.makeMap(s1.peers, true);
-  raft.stop(model, model.servers[2]);
-  raft.stop(model, model.servers[3]);
-  raft.stop(model, model.servers[4]);
+  stop(model, model.servers[2]);
+  stop(model, model.servers[3]);
+  stop(model, model.servers[4]);
   rules.becomeLeader(model, s1);
-  raft.clientRequest(model, s1);
-  raft.clientRequest(model, s1);
-  raft.clientRequest(model, s1);
-};
-
-})();
-
-export {raft}
+  clientRequest(model, s1);
+  clientRequest(model, s1);
+  clientRequest(model, s1);
+}
